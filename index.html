@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MechPhy - Attendance System</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1e1e2f;
+      color: #e0e0f8;
+    }
+    .container {
+      text-align: center;
+      width: 350px;
+      padding: 20px;
+      background: #2a2a3d;
+      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
+      border-radius: 10px;
+      margin: 20px;
+    }
+    .quote-box {
+      font-style: italic;
+      color: #90caf9;
+      margin-bottom: 20px;
+      font-size: 1.1em;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    input {
+      width: calc(100% - 22px);
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #444;
+      border-radius: 5px;
+      background-color: #333;
+      color: #e0e0f8;
+    }
+    h2 {
+      color: #90caf9;
+      margin-top: 0;
+    }
+    .hidden {
+      display: none;
+    }
+    #status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .success {
+      background-color: rgba(40, 167, 69, 0.2);
+      color: #98fb98;
+    }
+    .error {
+      background-color: rgba(220, 53, 69, 0.2);
+      color: #ff6b6b;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div id="quote-box" class="quote-box">"TOUCH THE SKY WITH GLORY" </div>
+
+  <div id="login-screen">
+    <h2>Mechphy</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div id="main-screen" class="hidden">
+    <h2>Ready for Duty</h2>
+    <button onclick="checkIn()">Check In</button>
+    <button onclick="checkOut()">Check Out</button>
+    <p id="status"></p>
+  </div>
+</div>
+
+<script>
+  // Your Google Apps Script Web URL
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-092hVvZioYGaVsqH9hGUFiaj2k1n07pIvZSh6RPcep98FRQ5EGKXgetCdeVuWLY/exec';
+
+  const users = [
+    { username: "ABHISHEK SINGH", password: "1234" },
+    { username: "ABHISHEK DUBEY", password: "1234" },
+    { username: "HARSHIT", password: "1234" },
+    { username: "NIKHIL", password: "1234" },
+    { username: "SAKSHAM", password: "1234" },
+    { username: "user", password: "1234" }
+  ];
+
+  let currentUser = '';
+
+  function showStatus(message, isError = false) {
+    const status = document.getElementById("status");
+    status.textContent = message;
+    status.className = isError ? 'error' : 'success';
+  }
+
+  function login() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const user = users.find(user => user.username === username && user.password === password);
+
+    if (user) {
+      currentUser = username;
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("main-screen").classList.remove("hidden");
+      showStatus(`Welcome ${username}!`);
+    } else {
+      showStatus("Invalid credentials", true);
+    }
+  }
+
+  async function sendDataToSheet(details) {
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        redirect: 'follow',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+        body: JSON.stringify(details)
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error:", error);
+      throw error;
+    }
+  }
+
+  async function checkIn() {
+    try {
+      const position = await getCurrentPosition();
+      const details = {
+        username: currentUser,
+        type: 'check-in',
+        latitude: position.coords.latitude.toFixed(5),
+        longitude: position.coords.longitude.toFixed(5),
+        timestamp: new Date().toLocaleString()
+      };
+
+      await sendDataToSheet(details);
+      showStatus(`✓ Checked In successfully at ${new Date().toLocaleTimeString()}`);
+    } catch (error) {
+      showStatus(error.message, true);
+    }
+  }
+
+  async function checkOut() {
+    try {
+      const keyTaken = confirm("Did you take the key?");
+      const position = await getCurrentPosition();
+      const details = {
+        username: currentUser,
+        type: 'check-out',
+        latitude: position.coords.latitude.toFixed(5),
+        longitude: position.coords.longitude.toFixed(5),
+        keyTaken: keyTaken,
+        timestamp: new Date().toLocaleString()
+      };
+
+      await sendDataToSheet(details);
+      showStatus(`✓ Checked Out successfully at ${new Date().toLocaleTimeString()}`);
+    } catch (error) {
+      showStatus(error.message, true);
+    }
+  }
+
+  function getCurrentPosition() {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation is not supported by your browser"));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(resolve, () => {
+        reject(new Error("Unable to get location. Please enable location services."));
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
