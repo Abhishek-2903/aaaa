@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convoy Monitoring System</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #2d4a2d 0%, #1a3d1a 100%);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border-bottom: 2px solid #4a6b4a;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #90c695;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .dashboard-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(145deg, #2a2a2a 0%, #1f1f1f 100%);
+            border: 1px solid #4a6b4a;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #4ade80, transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(74, 107, 74, 0.3);
+            border-color: #5a7b5a;
+        }
+
+        .metric-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #4ade80;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+        }
+
+        .metric-label {
+            font-size: 1rem;
+            color: #b0b0b0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .metric-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        }
+
+        .navigation-tabs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .nav-card {
+            background: linear-gradient(145deg, #2a4a2a 0%, #1a3d1a 100%);
+            border: 1px solid #4a6b4a;
+            border-radius: 12px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.1));
+            transition: width 0.3s ease;
+        }
+
+        .nav-card:hover::after {
+            width: 100%;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(74, 107, 74, 0.4);
+            border-color: #5a7b5a;
+        }
+
+        .nav-card h3 {
+            color: #90c695;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .nav-card p {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .content-panel {
+            background: linear-gradient(145deg, #2a2a2a 0%, #1f1f1f 100%);
+            border: 1px solid #4a6b4a;
+            border-radius: 12px;
+            padding: 2rem;
+            height: 400px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #404040;
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            color: #90c695;
+            font-weight: 600;
+        }
+
+        .vehicle-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .vehicle-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(74, 107, 74, 0.1);
+            border: 1px solid #404040;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .vehicle-item:hover {
+            background: rgba(74, 107, 74, 0.2);
+            border-color: #4a6b4a;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+            border: 1px solid #4ade80;
+        }
+
+        .status-maintenance {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid #fbbf24;
+        }
+
+        .status-pending {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .map-container {
+            position: relative;
+            height: 300px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #1a1a1a;
+            border: 1px solid #4a6b4a;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .vehicle-marker {
+            width: 30px;
+            height: 30px;
+            background: #4ade80;
+            border: 3px solid #1a1a1a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #1a1a1a;
+            animation: vehiclePulse 2s infinite;
+            cursor: pointer;
+        }
+
+        .vehicle-marker.maintenance {
+            background: #fbbf24;
+            animation: maintenanceBlink 1s infinite;
+        }
+
+        .vehicle-marker.offline {
+            background: #ef4444;
+            animation: none;
+        }
+
+        @keyframes vehiclePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
+        }
+
+        @keyframes maintenanceBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .checkpoint-marker {
+            width: 20px;
+            height: 20px;
+            background: #f59e0b;
+            border: 2px solid #1a1a1a;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #1a1a1a;
+        }
+
+        .checkpoint-marker.cleared {
+            background: #10b981;
+        }
+
+        .checkpoint-marker.pending {
+            background: #ef4444;
+            animation: pendingAlert 1.5s infinite;
+        }
+
+        @keyframes pendingAlert {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 1000;
+        }
+
+        .map-control-btn {
+            width: 30px;
+            height: 30px;
+            background: rgba(42, 42, 42, 0.9);
+            border: 1px solid #4a6b4a;
+            border-radius: 4px;
+            color: #90c695;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .map-control-btn:hover {
+            background: rgba(74, 107, 74, 0.9);
+            color: #fff;
+        }
+
+        .vehicle-tooltip {
+            background: rgba(42, 42, 42, 0.95);
+            border: 1px solid #4a6b4a;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #e0e0e0;
+            font-size: 12px;
+        }
+
+        .live-tracking-panel {
+            background: linear-gradient(145deg, #2a2a2a 0%, #1f1f1f 100%);
+            border: 1px solid #4a6b4a;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .tracking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #404040;
+        }
+
+        .tracking-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .tracking-stat {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(74, 107, 74, 0.1);
+            border-radius: 8px;
+            border: 1px solid #404040;
+        }
+
+        .tracking-stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4ade80;
+        }
+
+        .tracking-stat-label {
+            font-size: 0.8rem;
+            color: #b0b0b0;
+            margin-top: 0.5rem;
+        }
+
+        .alert-badge {
+            background: #ef4444;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            animation: alertPulse 1s infinite;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .footer {
+            margin-top: 2rem;
+            padding: 1rem 0;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #404040;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .dashboard-container {
+                padding: 1rem;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .navigation-tabs {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            🚚 FleetCommand
+        </div>
+        <div class="user-info">
+            <div class="status-indicator"></div>
+            <span>14:30:45 | 23 FEB 2024</span>
+            <span>⚡ Capt. Anderson</span>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Key Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">🚛</div>
+                <div class="metric-number">47</div>
+                <div class="metric-label">Vehicles Active</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">🗺️</div>
+                <div class="metric-number">12</div>
+                <div class="metric-label">Active Routes</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">📋</div>
+                <div class="metric-number">08</div>
+                <div class="metric-label">Pending Check Posts</div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="navigation-tabs">
+            <div class="nav-card" onclick="selectTab('vehicle-management')">
+                <h3>Vehicle Management</h3>
+                <p>Monitor fleet status, maintenance schedules, and vehicle assignments</p>
+            </div>
+            <div class="nav-card" onclick="selectTab('route-planning')">
+                <h3>Route Planning</h3>
+                <p>Create optimized routes, manage waypoints, and track progress</p>
+            </div>
+            <div class="nav-card" onclick="selectTab('live-monitoring')">
+                <h3>Live Monitoring</h3>
+                <p>Real-time vehicle tracking, alerts, and operational oversight</p>
+            </div>
+            <div class="nav-card" onclick="selectTab('check-post-logs')">
+                <h3>Check Post Logs</h3>
+                <p>Review verification records, clearance status, and compliance data</p>
+            </div>
+        </div>
+
+        <!-- Main Content Panels -->
+        <div class="main-content">
+            <div class="content-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Vehicle Status</h2>
+                    <div class="sync-status">
+                        <span>🔄</span>
+                        <span>Live</span>
+                    </div>
+                </div>
+                <div class="vehicle-list">
+                    <div class="vehicle-item">
+                        <div>
+                            <strong>VH-001</strong>
+                            <div style="font-size: 0.9rem; color: #b0b0b0;">Route 66</div>
+                        </div>
+                        <span class="status-badge status-active">Active</span>
+                    </div>
+                    <div class="vehicle-item">
+                        <div>
+                            <strong>VH-002</strong>
+                            <div style="font-size: 0.9rem; color: #b0b0b0;">Base Camp</div>
+                        </div>
+                        <span class="status-badge status-maintenance">Maintenance</span>
+                    </div>
+                    <div class="vehicle-item">
+                        <div>
+                            <strong>VH-003</strong>
+                            <div style="font-size: 0.9rem; color: #b0b0b0;">Checkpoint A</div>
+                        </div>
+                        <span class="status-badge status-active">Active</span>
+                    </div>
+                    <div class="vehicle-item">
+                        <div>
+                            <strong>VH-004</strong>
+                            <div style="font-size: 0.9rem; color: #b0b0b0;">Route 13</div>
+                        </div>
+                        <span class="status-badge status-active">Active</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Live Routes</h2>
+                    <div class="sync-status">
+                        <span>📍</span>
+                        <span>Tracking</span>
+                    </div>
+                </div>
+                <div class="map-container">
+                    <div id="map"></div>
+                    <div class="map-controls">
+                        <div class="map-control-btn" onclick="zoomIn()">+</div>
+                        <div class="map-control-btn" onclick="zoomOut()">−</div>
+                        <div class="map-control-btn" onclick="centerMap()">⌂</div>
+                        <div class="map-control-btn" onclick="toggleTracking()">📍</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Tracking Panel -->
+        <div class="live-tracking-panel">
+            <div class="tracking-header">
+                <h2 class="panel-title">Live Tracking Analytics</h2>
+                <div class="sync-status">
+                    <span class="status-indicator"></span>
+                    <span>Real-time</span>
+                    <span class="alert-badge" id="alertCount">3</span>
+                </div>
+            </div>
+            <div class="tracking-stats">
+                <div class="tracking-stat">
+                    <div class="tracking-stat-value" id="avgSpeed">42</div>
+                    <div class="tracking-stat-label">Avg Speed (km/h)</div>
+                </div>
+                <div class="tracking-stat">
+                    <div class="tracking-stat-value" id="totalDistance">1,247</div>
+                    <div class="tracking-stat-label">Total Distance (km)</div>
+                </div>
+                <div class="tracking-stat">
+                    <div class="tracking-stat-value" id="eta">2.5</div>
+                    <div class="tracking-stat-label">Avg ETA (hours)</div>
+                </div>
+                <div class="tracking-stat">
+                    <div class="tracking-stat-value" id="fuelEfficiency">85%</div>
+                    <div class="tracking-stat-label">Fuel Efficiency</div>
+                </div>
+                <div class="tracking-stat">
+                    <div class="tracking-stat-value" id="onTimeDelivery">94%</div>
+                    <div class="tracking-stat-label">On-time Delivery</div>
+                </div>
+                <div class="tracking-stat">
+                    <div class="tracking-stat-value" id="activeAlerts">3</div>
+                    <div class="tracking-stat-label">Active Alerts</div>
+                </div>
+            </div>
+        </div>
+        <div class="content-panel" style="margin-top: 2rem;">
+            <div class="panel-header">
+                <h2 class="panel-title">Recent Check Post Activity</h2>
+            </div>
+            <div class="vehicle-list">
+                <div class="vehicle-item">
+                    <div>
+                        <strong>14:25</strong>
+                        <div style="font-size: 0.9rem; color: #b0b0b0;">📍 Checkpoint A</div>
+                    </div>
+                    <span class="status-badge status-active">Cleared</span>
+                </div>
+                <div class="vehicle-item">
+                    <div>
+                        <strong>14:15</strong>
+                        <div style="font-size: 0.9rem; color: #b0b0b0;">📍 Checkpoint B</div>
+                    </div>
+                    <span class="status-badge status-pending">Pending</span>
+                </div>
+                <div class="vehicle-item">
+                    <div>
+                        <strong>14:05</strong>
+                        <div style="font-size: 0.9rem; color: #b0b0b0;">📍 Checkpoint C</div>
+                    </div>
+                    <span class="status-badge status-active">Cleared</span>
+                </div>
+                <div class="vehicle-item">
+                    <div>
+                        <strong>13:55</strong>
+                        <div style="font-size: 0.9rem; color: #b0b0b0;">📍 Checkpoint D</div>
+                    </div>
+                    <span class="status-badge status-active">Cleared</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="sync-status">
+            <span>🌐 System Status: Operational</span>
+            <span style="margin-left: 2rem;">🔄 Last Sync: 14:30:45</span>
+        </div>
+    </div>
+
+    <script>
+        let map;
+
+        function initMap() {
+            map = L.map('map').setView([28.7041, 77.1025], 10);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 18,
+                tileSize: 512,
+                zoomOffset: -1
+            }).addTo(map);
+
+            // Apply custom map style
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .leaflet-tile {
+                    filter: hue-rotate(100deg) brightness(80%) saturate(50%);
+                }
+            `;
+            document.head.appendChild(style);
+
+            const vehicles = [
+                { id: 'VH-001', lat: 28.7041, lng: 77.1025, status: 'active', route: 'Route 66' },
+                { id: 'VH-002', lat: 28.7141, lng: 77.1125, status: 'maintenance', route: 'Base Camp' },
+                { id: 'VH-003', lat: 28.6941, lng: 77.0925, status: 'active', route: 'Checkpoint A' },
+                { id: 'VH-004', lat: 28.6841, lng: 77.1225, status: 'active', route: 'Route 13' }
+            ];
+
+            const checkpoints = [
+                { id: 'A', lat: 28.7091, lng: 77.1075, status: 'cleared', title: 'Checkpoint A - Cleared' },
+                { id: 'B', lat: 28.6991, lng: 77.0975, status: 'pending', title: 'Checkpoint B - Pending' },
+                { id: 'C', lat: 28.6891, lng: 77.0875, status: 'cleared', title: 'Checkpoint C - Cleared' },
+                { id: 'D', lat: 28.6791, lng: 77.1175, status: 'cleared', title: 'Checkpoint D - Cleared' }
+            ];
+
+            vehicles.forEach(vehicle => {
+                const markerDiv = L.divIcon({
+                    className: `vehicle-marker ${vehicle.status}`,
+                    html: `<div style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">${vehicle.id.split('-')[1]}</div>`,
+                    iconSize: [30, 30]
+                });
+
+                const marker = L.marker([vehicle.lat, vehicle.lng], { icon: markerDiv }).addTo(map);
+                marker.bindTooltip(`<div class="vehicle-tooltip">${vehicle.id}<br>${vehicle.route}</div>`, {
+                    permanent: false,
+                    direction: 'top',
+                    offset: [0, -10]
+                });
+            });
+
+            checkpoints.forEach(checkpoint => {
+                const markerDiv = L.divIcon({
+                    className: `checkpoint-marker ${checkpoint.status}`,
+                    html: `<div style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">${checkpoint.id}</div>`,
+                    iconSize: [20, 20]
+                });
+
+                const marker = L.marker([checkpoint.lat, checkpoint.lng], { icon: markerDiv }).addTo(map);
+                marker.bindTooltip(`<div class="vehicle-tooltip">${checkpoint.title}</div>`, {
+                    permanent: false,
+                    direction: 'top',
+                    offset: [0, -10]
+                });
+            });
+
+            const routePath = [
+                [28.7041, 77.1025],
+                [28.6991, 77.0975],
+                [28.6891, 77.0875]
+            ];
+
+            const polyline = L.polyline(routePath, {
+                color: '#4ade80',
+                weight: 3,
+                opacity: 1
+            }).addTo(map);
+        }
+
+        function zoomIn() {
+            map.zoomIn();
+        }
+
+        function zoomOut() {
+            map.zoomOut();
+        }
+
+        function centerMap() {
+            map.setView([28.7041, 77.1025], 10);
+        }
+
+        function toggleTracking() {
+            console.log('Tracking toggled');
+        }
+
+        function selectTab(tabName) {
+            const pages = {
+                'vehicle-management': 'vehicle-management.html',
+                'route-planning': 'route-planning.html',
+                'live-monitoring': 'live-monitoring.html',
+                'check-post-logs': 'check-post-logs.html'
+            };
+
+            if (pages[tabName]) {
+                window.location.href = pages[tabName];
+            }
+
+            const tabs = document.querySelectorAll('.nav-card');
+            tabs.forEach(tab => {
+                tab.style.background = 'linear-gradient(145deg, #2a4a2a 0%, #1a3d1a 100%)';
+            });
+            
+            event.currentTarget.style.background = 'linear-gradient(145deg, #3a5a3a 0%, #2a4d2a 100%)';
+            event.currentTarget.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                event.currentTarget.style.transform = 'translateY(-3px)';
+            }, 100);
+        }
+
+        function updateTimestamp() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-GB', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            const dateString = now.toLocaleDateString('en-GB', { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric' 
+            }).toUpperCase();
+            
+            const timestampElement = document.querySelector('.user-info span');
+            if (timestampElement) {
+                timestampElement.textContent = `${timeString} | ${dateString}`;
+            }
+        }
+
+        setInterval(updateTimestamp, 1000);
+
+        document.querySelectorAll('.metric-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.background = 'linear-gradient(145deg, #3a3a3a 0%, #2f2f2f 100%)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.background = 'linear-gradient(145deg, #2a2a2a 0%, #1f1f1f 100%)';
+            });
+        });
+
+        // Initialize map on page load
+        window.onload = initMap;
+    </script>
+</body>
+</html>
