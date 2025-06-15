@@ -1,206 +1,352 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MechPhy - Attendance System</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      font-family: 'Arial', sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: #1e1e2f;
-      color: #e0e0f8;
-    }
-    .container {
-      text-align: center;
-      width: 350px;
-      padding: 20px;
-      background: #2a2a3d;
-      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
-      margin: 20px;
-    }
-    .quote-box {
-      font-style: italic;
-      color: #90caf9;
-      margin-bottom: 20px;
-      font-size: 1.1em;
-    }
-    button {
-      background-color: #007bff;
-      color: white;
-      padding: 10px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      width: 100%;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    input {
-      width: calc(100% - 22px);
-      padding: 10px;
-      margin: 5px 0;
-      border: 1px solid #444;
-      border-radius: 5px;
-      background-color: #333;
-      color: #e0e0f8;
-    }
-    h2 {
-      color: #90caf9;
-      margin-top: 0;
-    }
-    .hidden {
-      display: none;
-    }
-    #status {
-      margin-top: 15px;
-      padding: 10px;
-      border-radius: 5px;
-    }
-    .success {
-      background-color: rgba(40, 167, 69, 0.2);
-      color: #98fb98;
-    }
-    .error {
-      background-color: rgba(220, 53, 69, 0.2);
-      color: #ff6b6b;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Access Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Subtle camouflage pattern overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(60, 80, 60, 0.03) 0px,
+                    rgba(60, 80, 60, 0.03) 10px,
+                    transparent 10px,
+                    transparent 20px
+                ),
+                repeating-linear-gradient(
+                    -45deg,
+                    rgba(40, 60, 40, 0.02) 0px,
+                    rgba(40, 60, 40, 0.02) 15px,
+                    transparent 15px,
+                    transparent 30px
+                );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            background: rgba(45, 55, 45, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(80, 120, 80, 0.3);
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .shield-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4a7c59 0%, #5d8a6b 100%);
+            border-radius: 8px;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .shield-icon::after {
+            content: '🛡️';
+            font-size: 24px;
+            filter: grayscale(100%) brightness(1.2);
+        }
+
+        .portal-title {
+            color: #e0e0e0;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .role-selection {
+            display: flex;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(80, 120, 80, 0.3);
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 12px 8px;
+            background: rgba(40, 50, 40, 0.8);
+            color: #b0b0b0;
+            border: none;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            border-right: 1px solid rgba(80, 120, 80, 0.3);
+        }
+
+        .role-btn:last-child {
+            border-right: none;
+        }
+
+        .role-btn.active {
+            background: linear-gradient(135deg, #4a7c59 0%, #5d8a6b 100%);
+            color: #ffffff;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .role-btn:hover:not(.active) {
+            background: rgba(60, 80, 60, 0.8);
+            color: #d0d0d0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            color: #c0c0c0;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(30, 35, 30, 0.8);
+            border: 1px solid rgba(80, 120, 80, 0.3);
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4a7c59;
+            box-shadow: 0 0 0 2px rgba(74, 124, 89, 0.2);
+            background: rgba(30, 35, 30, 0.9);
+        }
+
+        .form-input::placeholder {
+            color: #888;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4a7c59 0%, #5d8a6b 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .auth-btn:hover {
+            background: linear-gradient(135deg, #5d8a6b 0%, #6fa67e 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .auth-btn:active {
+            transform: translateY(0);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4a7c59;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .footer-text {
+            text-align: center;
+            color: #666;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .system-status {
+            text-align: center;
+            color: #4a7c59;
+            font-size: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .system-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4a7c59;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* Responsive design */
+        @media (max-width: 480px) {
+            .container {
+                margin: 20px;
+                padding: 30px 25px;
+            }
+            
+            .role-btn {
+                padding: 10px 6px;
+                font-size: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <div class="logo">
+            <div class="shield-icon"></div>
+            <div class="portal-title">Secure Access Portal</div>
+        </div>
 
-<div class="container">
-  <div id="quote-box" class="quote-box">"TOUCH THE SKY WITH GLORY" </div>
+        <div class="role-selection">
+            <button class="role-btn active" onclick="setRole('admin')">Admin</button>
+            <button class="role-btn" onclick="setRole('vehicle-owner')">Vehicle<br>Owner</button>
+            <button class="role-btn" onclick="setRole('check-post')">Check Post</button>
+        </div>
 
-  <div id="login-screen">
-    <h2>Mechphy</h2>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-  </div>
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label class="form-label">Username / ID</label>
+                <input type="text" class="form-input" placeholder="Enter username" required>
+            </div>
 
-  <div id="main-screen" class="hidden">
-    <h2>Ready for Duty</h2>
-    <button onclick="checkIn()">Check In</button>
-    <button onclick="checkOut()">Check Out</button>
-    <p id="status"></p>
-  </div>
-</div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" placeholder="Enter password" required>
+            </div>
 
-<script>
-  // Your Google Apps Script Web URL
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-092hVvZioYGaVsqH9hGUFiaj2k1n07pIvZSh6RPcep98FRQ5EGKXgetCdeVuWLY/exec';
+            <button type="submit" class="auth-btn">Authenticate</button>
+        </form>
 
-  const users = [
-    { username: "ABHISHEK SINGH", password: "1234" },
-    { username: "ABHISHEK DUBEY", password: "1234" },
-    { username: "HARSHIT", password: "1234" },
-    { username: "NIKHIL", password: "1234" },
-    { username: "SAKSHAM", password: "1234" },
-    { username: "user", password: "1234" }
-  ];
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <span>Classified Access</span>
+            </div>
+            <div class="status-item">
+                <span>Session: 14:59</span>
+            </div>
+        </div>
 
-  let currentUser = '';
+        <div class="footer-text">Authorized Access Only</div>
+        <div class="system-status">System Status: Active</div>
+    </div>
 
-  function showStatus(message, isError = false) {
-    const status = document.getElementById("status");
-    status.textContent = message;
-    status.className = isError ? 'error' : 'success';
-  }
+    <script>
+        let selectedRole = 'admin';
 
-  function login() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    const user = users.find(user => user.username === username && user.password === password);
+        function setRole(role) {
+            selectedRole = role;
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
 
-    if (user) {
-      currentUser = username;
-      document.getElementById("login-screen").classList.add("hidden");
-      document.getElementById("main-screen").classList.remove("hidden");
-      showStatus(`Welcome ${username}!`);
-    } else {
-      showStatus("Invalid credentials", true);
-    }
-  }
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = event.target.querySelector('input[type="text"]').value;
+            const password = event.target.querySelector('input[type="password"]').value;
+            
+            if (username && password) {
+                // Simulate authentication process
+                const authBtn = document.querySelector('.auth-btn');
+                authBtn.textContent = 'Authenticating...';
+                authBtn.style.opacity = '0.7';
+                
+                setTimeout(() => {
+                    // Redirect to dashboard page with role as query parameter
+                    window.location.href = `2.html?role=${encodeURIComponent(selectedRole)}`;
+                }, 2000);
+            }
+        }
 
-  async function sendDataToSheet(details) {
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        redirect: 'follow',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain',
-        },
-        body: JSON.stringify(details)
-      });
+        // Update session timer every minute
+        function updateSessionTimer() {
+            const sessionElement = document.querySelector('.status-bar .status-item:last-child span');
+            const now = new Date();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            sessionElement.textContent = `Session: ${minutes}:${seconds}`;
+        }
 
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error:", error);
-      throw error;
-    }
-  }
-
-  async function checkIn() {
-    try {
-      const position = await getCurrentPosition();
-      const details = {
-        username: currentUser,
-        type: 'check-in',
-        latitude: position.coords.latitude.toFixed(5),
-        longitude: position.coords.longitude.toFixed(5),
-        timestamp: new Date().toLocaleString()
-      };
-
-      await sendDataToSheet(details);
-      showStatus(`✓ Checked In successfully at ${new Date().toLocaleTimeString()}`);
-    } catch (error) {
-      showStatus(error.message, true);
-    }
-  }
-
-  async function checkOut() {
-    try {
-      const keyTaken = confirm("Did you take the key?");
-      const position = await getCurrentPosition();
-      const details = {
-        username: currentUser,
-        type: 'check-out',
-        latitude: position.coords.latitude.toFixed(5),
-        longitude: position.coords.longitude.toFixed(5),
-        keyTaken: keyTaken,
-        timestamp: new Date().toLocaleString()
-      };
-
-      await sendDataToSheet(details);
-      showStatus(`✓ Checked Out successfully at ${new Date().toLocaleTimeString()}`);
-    } catch (error) {
-      showStatus(error.message, true);
-    }
-  }
-
-  function getCurrentPosition() {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error("Geolocation is not supported by your browser"));
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(resolve, () => {
-        reject(new Error("Unable to get location. Please enable location services."));
-      });
-    });
-  }
-</script>
-
+        setInterval(updateSessionTimer, 1000);
+    </script>
 </body>
 </html>
