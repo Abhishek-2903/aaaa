@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #111827;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Styles */
+        .header {
+            background-color: #1f2937;
+            border-bottom: 1px solid #374151;
+            padding: 1rem;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        .header-subtitle {
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .last-update {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+
+        /* Main Container */
+        .main-container {
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex: 1;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .panel-card {
+            background-color: #1f2937;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border: 1px solid #374151;
+        }
+
+        .panel-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #10b981;
+        }
+
+        .search-filter-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1rem;
+            height: 1rem;
+            color: #9ca3af;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+            color: white;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: #10b981;
+        }
+
+        .form-select {
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .add-btn {
+            background-color: #059669;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-weight: 500;
+        }
+
+        .add-btn:hover {
+            background-color: #047857;
+        }
+
+        /* Road Occupancy */
+        .occupancy-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .occupancy-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background-color: #374151;
+            border-radius: 9999px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-green { background-color: #10b981; }
+        .progress-yellow { background-color: #f59e0b; }
+        .progress-red { background-color: #ef4444; }
+
+        .occupancy-percentage {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 0.5rem;
+        }
+
+        /* Fleet Summary */
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .status-operational { color: #10b981; }
+        .status-transit { color: #3b82f6; }
+        .status-maintenance { color: #f59e0b; }
+
+        /* Vehicle Grid */
+        .vehicle-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .vehicle-card {
+            background-color: #1f2937;
+            border-radius: 0.5rem;
+            border: 1px solid #374151;
+            padding: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .vehicle-card:hover {
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+
+        .vehicle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .vehicle-id-section {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .vehicle-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            color: #10b981;
+        }
+
+        .vehicle-id {
+            font-family: 'Courier New', monospace;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-operational-bg { background-color: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status-transit-bg { background-color: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .status-maintenance-bg { background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+
+        .vehicle-details, .vehicle-info, .fuel-section {
+            margin-bottom: 1rem;
+        }
+
+        .detail-row, .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .info-row svg {
+            width: 1rem;
+            height: 1rem;
+            color: #9ca3af;
+        }
+
+        .fuel-bar {
+            width: 100%;
+            background-color: #374151;
+            border-radius: 9999px;
+            height: 8px;
+        }
+
+        .fuel-fill {
+            height: 100%;
+            border-radius: 9999px;
+        }
+
+        .fuel-high { background-color: #10b981; }
+        .fuel-medium { background-color: #f59e0b; }
+        .fuel-low { background-color: #ef4444; }
+
+        .vehicle-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+
+        .btn-track { background-color: #059669; color: white; }
+        .btn-track:hover { background-color: #047857; }
+        .btn-config { background-color: #4b5563; color: white; }
+        .btn-config:hover { background-color: #374151; }
+
+        .warning {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #f59e0b;
+            font-size: 0.75rem;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .modal-content {
+            background-color: #1f2937;
+            border-radius: 0.5rem;
+            border: 1px solid #374151;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 28rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #10b981;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            color: #d1d5db;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input-full {
+            width: 100%;
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            color: white;
+            outline: none;
+        }
+
+        .form-input-full:focus {
+            border-color: #10b981;
+        }
+
+        .dimensions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+        }
+
+        .btn-primary { background-color: #059669; color: white; }
+        .btn-primary:hover { background-color: #047857; }
+        .btn-secondary { background-color: #4b5563; color: white; }
+        .btn-secondary:hover { background-color: #374151; }
+
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            .header-title h1 { font-size: 2rem; }
+            .vehicle-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (min-width: 1024px) {
+            .main-container { grid-template-columns: 1fr 2fr; }
+            .vehicle-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (min-width: 1280px) {
+            .main-container { grid-template-columns: 1fr 3fr; }
+            .vehicle-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-title">
+                <h1>VEHICLE MANAGEMENT SYSTEM</h1>
+                <p class="header-subtitle">TACTICAL FLEET CONTROL INTERFACE</p>
+            </div>
+            <div class="header-status">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span style="color: #10b981;">System Online</span>
+                </div>
+                <div class="last-update" id="lastUpdate">Last Update: Loading... UTC</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <!-- Search and Filter -->
+            <div class="panel-card">
+                <h3 class="panel-title">CONTROL PANEL</h3>
+                <div class="search-filter-section">
+                    <div class="input-group">
+                        <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <input type="text" id="searchInput" placeholder="Search vehicles..." class="form-input">
+                    </div>
+                    <div class="input-group">
+                        <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
+                        </svg>
+                        <select id="filterStatus" class="form-select">
+                            <option value="All">All Status</option>
+                            <option value="Operational">Operational</option>
+                            <option value="In Transit">In Transit</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                    <button class="add-btn" id="addVehicleBtn">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        ADD VEHICLE
+                    </button>
+                </div>
+            </div>
+            <!-- Road Occupancy Stats -->
+            <div class="panel-card">
+                <h3 class="panel-title">ROAD OCCUPANCY</h3>
+                <div id="roadOccupancy"></div>
+            </div>
+            <!-- Fleet Summary -->
+            <div class="panel-card">
+                <h3 class="panel-title">FLEET SUMMARY</h3>
+                <div id="fleetSummary"></div>
+            </div>
+        </div>
+        <!-- Vehicle Grid -->
+        <div class="vehicle-grid" id="vehicleGrid"></div>
+    </div>
+
+    <!-- Add Vehicle Modal -->
+    <div class="modal-overlay" id="addVehicleModal">
+        <div class="modal-content">
+            <h2 class="modal-title">ADD NEW VEHICLE</h2>
+            <div class="form-group">
+                <label class="form-label">Vehicle Type</label>
+                <select id="vehicleType" class="form-input-full">
+                    <option value="">Select Type</option>
+                    <option value="Heavy Transport">Heavy Transport</option>
+                    <option value="Light Patrol">Light Patrol</option>
+                    <option value="Supply Vehicle">Supply Vehicle</option>
+                    <option value="Command Vehicle">Command Vehicle</option>
+                    <option value="Armored Transport">Armored Transport</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Model</label>
+                <input type="text" id="vehicleModel" class="form-input-full" placeholder="Enter vehicle model">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Driver</label>
+                <input type="text" id="vehicleDriver" class="form-input-full" placeholder="Enter driver name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Location</label>
+                <input type="text" id="vehicleLocation" class="form-input-full" placeholder="Enter current location">
+            </div>
+            <div class="dimensions-grid">
+                <div class="form-group">
+                    <label class="form-label">Length (m)</label>
+                    <input type="number" step="0.1" id="vehicleLength" class="form-input-full">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Width (m)</label>
+                    <input type="number" step="0.1" id="vehicleWidth" class="form-input-full">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Height (m)</label>
+                    <input type="number" step="0.1" id="vehicleHeight" class="form-input-full">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn btn-primary" id="saveVehicleBtn">ADD VEHICLE</button>
+                <button class="modal-btn btn-secondary" id="cancelBtn">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        let vehicles = [
+            { id: 'VH-001', type: 'Heavy Transport', model: 'M1083 MTV', driver: 'SGT Martinez, J.', gpsId: 'GPS-7731', status: 'Operational', location: 'Sector Alpha-7', dimensions: { length: 7.2, width: 2.5, height: 3.1 }, fuelLevel: 85, lastMaintenance: '2024-05-15' },
+            { id: 'VH-002', type: 'Light Patrol', model: 'HMMWV M1165', driver: 'CPL Thompson, R.', gpsId: 'GPS-4429', status: 'In Transit', location: 'Route Bravo-12', dimensions: { length: 4.8, width: 2.2, height: 2.0 }, fuelLevel: 67, lastMaintenance: '2024-06-01' },
+            { id: 'VH-003', type: 'Supply Vehicle', model: 'M35A3 Deuce', driver: 'PVT Chen, L.', gpsId: 'GPS-9882', status: 'Maintenance', location: 'Motor Pool', dimensions: { length: 6.7, width: 2.4, height: 2.9 }, fuelLevel: 73, lastMaintenance: '2024-06-10' },
+            { id: 'VH-004', type: 'Command Vehicle', model: 'M1152A1 HMMWV', driver: 'LT Rodriguez, M.', gpsId: 'GPS-1156', status: 'Operational', location: 'Command Post', dimensions: { length: 4.9, width: 2.2, height: 2.1 }, fuelLevel: 91, lastMaintenance: '2024-05-28' },
+            { id: 'VH-005', type: 'Armored Transport', model: 'M-ATV MRAP', driver: 'SSG Davis, K.', gpsId: 'GPS-3347', status: 'Operational', location: 'Checkpoint Charlie', dimensions: { length: 5.8, width: 2.4, height: 2.7 }, fuelLevel: 74, lastMaintenance: '2024-06-05' },
+            { id: 'VH-006', type: 'Heavy Transport', model: 'M1083 MTV', driver: 'SGT Martinez, J.', gpsId: 'GPS-7731', status: 'Operational', location: 'Sector Alpha-7', dimensions: { length: 7.2, width: 2.5, height: 3.1 }, fuelLevel: 85, lastMaintenance: '2024-05-15' },
+
+        ];
+
+        const vehicleTypes = {
+            'Heavy Transport': { length: 7.2, width: 2.5, height: 3.1 },
+            'Light Patrol': { length: 4.8, width: 2.2, height: 2.0 },
+            'Supply Vehicle': { length: 6.7, width: 2.4, height: 2.9 },
+            'Command Vehicle': { length: 4.9, width: 2.2, height: 2.1 },
+            'Armored Transport': { length: 5.8, width: 2.4, height: 2.7 }
+        };
+
+        const roadOccupancy = {
+            'Route Alpha': { capacity: 12, occupied: 8, vehicles: ['VH-001', 'VH-004'] },
+            'Route Bravo': { capacity: 8, occupied: 3, vehicles: ['VH-002'] },
+            'Route Charlie': { capacity: 15, occupied: 12, vehicles: ['VH-005'] },
+            'Route Delta': { capacity: 10, occupied: 6, vehicles: [] }
+        };
+
+        let searchTerm = '';
+        let filterStatus = 'All';
+
+        // DOM Elements
+        const searchInput = document.getElementById('searchInput');
+        const filterSelect = document.getElementById('filterStatus');
+        const addVehicleBtn = document.getElementById('addVehicleBtn');
+        const vehicleGrid = document.getElementById('vehicleGrid');
+        const roadOccupancyDiv = document.getElementById('roadOccupancy');
+        const fleetSummaryDiv = document.getElementById('fleetSummary');
+        const modal = document.getElementById('addVehicleModal');
+        const saveVehicleBtn = document.getElementById('saveVehicleBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const vehicleTypeSelect = document.getElementById('vehicleType');
+
+        // Utility Functions
+        function updateLastUpdateTime() {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = `Last Update: ${now.toLocaleTimeString()} UTC`;
+        }
+
+        function getStatusBadgeClass(status) {
+            return {
+                'Operational': 'status-operational-bg',
+                'In Transit': 'status-transit-bg',
+                'Maintenance': 'status-maintenance-bg'
+            }[status] || 'status-operational-bg';
+        }
+
+        function getFuelBarClass(fuelLevel) {
+            if (fuelLevel > 50) return 'fuel-high';
+            if (fuelLevel > 25) return 'fuel-medium';
+            return 'fuel-low';
+        }
+
+        function getOccupancyBarClass(percentage) {
+            if (percentage < 50) return 'progress-green';
+            if (percentage < 80) return 'progress-yellow';
+            return 'progress-red';
+        }
+
+        // Filter and Search Functions
+        function filterVehicles() {
+            return vehicles.filter(vehicle => {
+                const matchesSearch = vehicle.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                      vehicle.driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                      vehicle.type.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesFilter = filterStatus === 'All' || vehicle.status === filterStatus;
+                return matchesSearch && matchesFilter;
+            });
+        }
+
+        // Render Functions
+        function renderVehicleCard(vehicle) {
+            return `
+                <div class="vehicle-card">
+                    <div class="vehicle-header">
+                        <div class="vehicle-id-section">
+                            <svg class="vehicle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
+                            <h3 class="vehicle-id">${vehicle.id}</h3>
+                        </div>
+                        <div class="status-badge ${getStatusBadgeClass(vehicle.status)}">${vehicle.status}</div>
+                    </div>
+                    <div class="vehicle-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Type:</span>
+                            <span class="detail-value">${vehicle.type}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Model:</span>
+                            <span class="detail-value detail-mono">${vehicle.model}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">GPS ID:</span>
+                            <span class="detail-value detail-mono detail-gps">${vehicle.gpsId}</span>
+                        </div>
+                    </div>
+                    <div class="vehicle-info">
+                        <div class="info-row">
+                            <svg class="info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <span>${vehicle.driver}</span>
+                        </div>
+                        <div class="info-row">
+                            <span>${vehicle.location}</span>
+                        </div>
+                    </div>
+                    <div class="fuel-section">
+                        <div class="fuel-header">
+                            <span class="fuel-label">Fuel Level</span>
+                            <span class="fuel-value">${vehicle.fuelLevel}%</span>
+                        </div>
+                        <div class="fuel-bar">
+                            <div class="fuel-fill ${getFuelBarClass(vehicle.fuelLevel)}" style="width: ${vehicle.fuelLevel}%"></div>
+                        </div>
+                    </div>
+                    <div class="dimensions">
+                        Dimensions: ${vehicle.dimensions.length}m × ${vehicle.dimensions.width}m × ${vehicle.dimensions.height}m
+                    </div>
+                    <div class="vehicle-actions">
+                        <button class="action-btn btn-track" onclick="trackVehicle('${vehicle.id}')">
+                            <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            TRACK
+                        </button>
+                        <button class="action-btn btn-config" onclick="configureVehicle('${vehicle.id}')">
+                            <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            CONFIG
+                        </button>
+                    </div>
+                    ${vehicle.fuelLevel < 30 ? `
+                        <div class="warning">
+                            <svg class="warning-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.996-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                            Low Fuel Warning
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderRoadOccupancy() {
+            let html = '';
+            Object.entries(roadOccupancy).forEach(([route, data]) => {
+                const percentage = (data.occupied / data.capacity) * 100;
+                html += `
+                    <div class="occupancy-item">
+                        <div class="occupancy-header">
+                            <span class="occupancy-route">${route}</span>
+                            <span class="occupancy-count">${data.occupied}/${data.capacity}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${getOccupancyBarClass(percentage)}" style="width: ${percentage}%"></div>
+                        </div>
+                        <div class="occupancy-percentage">${percentage.toFixed(1)}% occupied</div>
+                    </div>
+                `;
+            });
+            roadOccupancyDiv.innerHTML = html;
+        }
+
+        function renderFleetSummary() {
+            const operational = vehicles.filter(v => v.status === 'Operational').length;
+            const inTransit = vehicles.filter(v => v.status === 'In Transit').length;
+            const maintenance = vehicles.filter(v => v.status === 'Maintenance').length;
+            fleetSummaryDiv.innerHTML = `
+                <div class="summary-item">
+                    <span class="summary-label">Total Vehicles:</span>
+                    <span class="summary-value">${vehicles.length}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Operational:</span>
+                    <span class="summary-value status-operational">${operational}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">In Transit:</span>
+                    <span class="summary-value status-transit">${inTransit}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Maintenance:</span>
+                    <span class="summary-value status-maintenance">${maintenance}</span>
+                </div>
+            `;
+        }
+
+        function renderVehicles() {
+            const filteredVehicles = filterVehicles();
+            vehicleGrid.innerHTML = filteredVehicles.length ? filteredVehicles.map(renderVehicleCard).join('') : '<p>No vehicles found.</p>';
+        }
+
+        function renderAll() {
+            renderVehicles();
+            renderRoadOccupancy();
+            renderFleetSummary();
+            updateLastUpdateTime();
+        }
+
+        // Vehicle Management Functions
+        function addVehicle() {
+            const type = document.getElementById('vehicleType').value;
+            const model = document.getElementById('vehicleModel').value;
+            const driver = document.getElementById('vehicleDriver').value;
+            const location = document.getElementById('vehicleLocation').value;
+            const length = parseFloat(document.getElementById('vehicleLength').value) || 0;
+            const width = parseFloat(document.getElementById('vehicleWidth').value) || 0;
+            const height = parseFloat(document.getElementById('vehicleHeight').value) || 0;
+
+            if (!type || !model || !driver || !location) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const vehicleId = `VH-${String(vehicles.length + 1).padStart(3, '0')}`;
+            const gpsId = `GPS-${Math.floor(Math.random() * 9000) + 1000}`;
+            vehicles.push({
+                id: vehicleId,
+                type,
+                model,
+                driver,
+                gpsId,
+                status: 'Operational',
+                location,
+                dimensions: { length, width, height },
+                fuelLevel: 100,
+                lastMaintenance: new Date().toISOString().split('T')[0]
+            });
+            closeModal();
+            clearForm();
+            renderAll();
+        }
+
+        function trackVehicle(vehicleId) {
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            if (vehicle) {
+                alert(`Tracking Vehicle ${vehicleId}\n\nCurrent Status: ${vehicle.status}\nLocation: ${vehicle.location}\nGPS ID: ${vehicle.gpsId}\nFuel Level: ${vehicle.fuelLevel}%\n\nReal-time tracking activated.`);
+            }
+        }
+
+        function configureVehicle(vehicleId) {
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            if (vehicle) {
+                const newStatus = prompt(`Configure Vehicle ${vehicleId}\n\nCurrent Status: ${vehicle.status}\n\nEnter new status (Operational/In Transit/Maintenance):`, vehicle.status);
+                if (newStatus && ['Operational', 'In Transit', 'Maintenance'].includes(newStatus)) {
+                    vehicle.status = newStatus;
+                    renderAll();
+                }
+            }
+        }
+
+        // Modal Functions
+        function openModal() {
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        function clearForm() {
+            document.getElementById('vehicleType').value = '';
+            document.getElementById('vehicleModel').value = '';
+            document.getElementById('vehicleDriver').value = '';
+            document.getElementById('vehicleLocation').value = '';
+            document.getElementById('vehicleLength').value = '';
+            document.getElementById('vehicleWidth').value = '';
+            document.getElementById('vehicleHeight').value = '';
+        }
+
+        // Event Listeners
+        searchInput.addEventListener('input', e => {
+            searchTerm = e.target.value;
+            renderVehicles();
+        });
+
+        filterSelect.addEventListener('change', e => {
+            filterStatus = e.target.value;
+            renderVehicles();
+        });
+
+        addVehicleBtn.addEventListener('click', openModal);
+        saveVehicleBtn.addEventListener('click', addVehicle);
+        cancelBtn.addEventListener('click', closeModal);
+
+        vehicleTypeSelect.addEventListener('change', e => {
+            const selectedType = e.target.value;
+            if (vehicleTypes[selectedType]) {
+                const { length, width, height } = vehicleTypes[selectedType];
+                document.getElementById('vehicleLength').value = length;
+                document.getElementById('vehicleWidth').value = width;
+                document.getElementById('vehicleHeight').value = height;
+            }
+        });
+
+        modal.addEventListener('click', e => {
+            if (e.target === modal) closeModal();
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
+        });
+
+        // Initialize
+        renderAll();
+        setInterval(updateLastUpdateTime, 1000);
+        setInterval(() => {
+            vehicles.forEach(vehicle => {
+                if (Math.random() < 0.1) {
+                    vehicle.fuelLevel = Math.max(0, vehicle.fuelLevel - Math.floor(Math.random() * 3));
+                }
+            });
+            renderVehicles();
+        }, 10000);
+    </script>
+</body>
+</html>
