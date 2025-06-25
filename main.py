@@ -11,6 +11,7 @@ import math
 import paho.mqtt.client as mqtt
 import threading
 import os  # Added for path handling
+import uvicorn
 
 app = FastAPI()
 
@@ -446,5 +447,11 @@ async def generate_movement_instructions(convoy: ConvoyRequest):
             "Fire suppression equipment mandatory",
             "Avoid populated areas where possible"
         ])
-    
     return instructions
+
+# uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    # uvicorn main:app --host 0.0.0.0 --port 8000 --reload
